@@ -21,20 +21,30 @@ log.Println(" Listening and serving HTTP on :8909")
  r.HandleFunc("/delete/{id}",DeleteDataById).Methods("DELETE")
  log.Fatal(http.ListenAndServe(":8909", r))
 }
-type DataTable struct {
+type (DataTable struct{
+	gorm.Model
+	Name          string 
+	Age           uint8  
+	Email         string 
+	ContactNumber string 
+	
+}
+DataTableModified struct {
 	ID            int `gorm:"primary_key;auto_increment" json:"id"`
 	Name          string `gorm:"not null" json:"name"`
 	Age           uint8  `gorm:"not null" json:"age"`
 	Email         string `gorm:"not null" json:"email"`
 	ContactNumber string `gorm:"not null" json:"contactNumber"`
-	
+
 }
+)
 var db *gorm.DB
 func init(){
 	var err error
 	  //db,err= gorm.Open("mysql","root"+":"+"root"+"@/"+"task")
+	  db,err=gorm.Open("mysql","root:root@/task")
 	// db,err= gorm.Open("mysql", "root:root@tcp(127.0.0.1:3306)/task")
-	db, err = gorm.Open("mysql", "root:root@/task?charset=utf8&parseTime=True&loc=Local")
+	//db, err = gorm.Open("mysql", "root:root@/task?charset=utf8&parseTime=True&loc=Local")
 	if err != nil{
 		 log.Fatal(err)
 		 log.Println("failed to connect database")
