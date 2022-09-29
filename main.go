@@ -41,10 +41,11 @@ DataTableModified struct {
 var db *gorm.DB
 func init(){
 	var err error
+	//diffrent ways to connect with db(<task> name of dadatbase )
+	db,err=gorm.Open("mysql","root:root@/task")
 	  //db,err= gorm.Open("mysql","root"+":"+"root"+"@/"+"task")
-	  db,err=gorm.Open("mysql","root:root@/task")
-	// db,err= gorm.Open("mysql", "root:root@tcp(127.0.0.1:3306)/task")
-	//db, err = gorm.Open("mysql", "root:root@/task?charset=utf8&parseTime=True&loc=Local")
+	  // db,err= gorm.Open("mysql", "root:root@tcp(127.0.0.1:3306)/task")
+	 //db, err = gorm.Open("mysql", "root:root@/task?charset=utf8&parseTime=True&loc=Local")
 	if err != nil{
 		 log.Fatal(err)
 		 log.Println("failed to connect database")
@@ -66,6 +67,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	var data =[]DataTable{}
 	db.Find(&data)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusFound)
 	json.NewEncoder(w).Encode(data)
 	log.Println("data fetched")
 }
@@ -76,6 +78,7 @@ func getDataByID(w http.ResponseWriter, r *http.Request) {
 	var data DataTable
 	db.First(&data, key)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusFound)
 	json.NewEncoder(w).Encode(data)
 	log.Println("fetched by id")
 }
