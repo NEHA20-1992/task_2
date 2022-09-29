@@ -2,105 +2,86 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
+
 	"github.com/gorilla/mux"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
-)
-
-func main() {
-log.Println(" Listening and serving HTTP on :8909")
- r := mux.NewRouter()
- r.HandleFunc("/data", createData).Methods("POST")
- r.HandleFunc("/fetchdata",getData).Methods("GET")
- r.HandleFunc("/fetchdata/{id}",getDataByID).Methods("GET")
- r.HandleFunc("/updatedata/{id}",updateDataByID).Methods("PUT")
- r.HandleFunc("/delete/{id}",DeleteDataById).Methods("DELETE")
- log.Fatal(http.ListenAndServe(":8909", r))
-}
-type (DataTable struct{
-	gorm.Model
-	Name          string 
-	Age           uint8  
-	Email         string 
-	ContactNumber string 
 	
-}
-DataTableModified struct {
-	ID            int `gorm:"primary_key;auto_increment" json:"id"`
-	Name          string `gorm:"not null" json:"name"`
-	Age           uint8  `gorm:"not null" json:"age"`
-	Email         string `gorm:"not null" json:"email"`
-	ContactNumber string `gorm:"not null" json:"contactNumber"`
-
-}
 )
-var db *gorm.DB
-func init(){
-	var err error
-	//diffrent ways to connect with db(<task> name of dadatbase )
-	db,err=gorm.Open("mysql","root:root@/task")
-	  //db,err= gorm.Open("mysql","root"+":"+"root"+"@/"+"task")
-	  // db,err= gorm.Open("mysql", "root:root@tcp(127.0.0.1:3306)/task")
-	 //db, err = gorm.Open("mysql", "root:root@/task?charset=utf8&parseTime=True&loc=Local")
-	if err != nil{
-		 log.Fatal(err)
-		 log.Println("failed to connect database")
-	}
-	log.Println("connected succesfully")
-	db.AutoMigrate(&DataTable{})
-} 
-func createData(w http.ResponseWriter, r *http.Request) {
-	requestBody, _ := ioutil.ReadAll(r.Body)
-	var data DataTable
-	json.Unmarshal(requestBody, &data)
-	db.Create(data)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(data)
-	log.Println("created Successfully")
+type modelTodo struct{
+	ID  string `json:"id"`
+	Todos string `json:"todos"`
 }
-func getData(w http.ResponseWriter, r *http.Request) {
-	var data =[]DataTable{}
-	db.Find(&data)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusFound)
-	json.NewEncoder(w).Encode(data)
-	log.Println("data fetched")
-}
+var container []modelTodo
 
-func getDataByID(w http.ResponseWriter, r *http.Request) {
+
+func allTodo(w http.ResponseWriter,r *http.Request){
+	fmt.Println("hit the end point")
+	json.NewEncoder(w).Encode(container)
+}
+ 
+func postTodo(w http.ResponseWriter,r *http.Request){
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	var todos modelTodo
+	json.Unmarshal(reqBody, &todos)
+	container=append(container,todos)
+	fmt.Println("Test post endpoint worked")
+	 json.NewEncoder(w).Encode(container)
+}
+ 
+func getTodoByID(w http.ResponseWriter,r *http.Request){
 	vars := mux.Vars(r)
 	key := vars["id"]
-	var data DataTable
-	db.First(&data, key)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusFound)
-	json.NewEncoder(w).Encode(data)
-	log.Println("fetched by id")
+	for  _,todo := range container{
+		if todo.ID ==key{
+			json.NewEncoder(w).Encode(todo)
+		}
+	}
 }
 
-func updateDataByID(w http.ResponseWriter, r *http.Request) {
-	requestBody, _ := ioutil.ReadAll(r.Body)
-	var data DataTable
-	json.Unmarshal(requestBody, &data)
-	db.Save(&data)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(data)
-	log.Println("Updated Successfully")
+func updateTodoByID(w http.ResponseWriter,r *http.Request){
+	vars := mux.Vars(r)
+	id := vars["id"]
+	var updatetodo modelTodo
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(reqBody, &updatetodo)
+	for _,todo := range container{
+		if todo.ID ==id{
+			todo.Todos=updatetodo.Todos
+			json.NewEncoder(w).Encode(todo)
+		}
+	}
 }
 
-func DeleteDataById(w http.ResponseWriter,r *http.Request){
-	vars :=mux.Vars(r)
-	key :=vars["id"]
-	var data DataTable
-	id, _ := strconv.ParseInt(key, 10, 64)
-	db.Where("id = ?", id).Delete(&data)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
-	log.Println("data deleted Successfully")
+func deleteTodo(w http.ResponseWriter,r *http.Request){
+	vars := mux.Vars(r)
+	id := vars["id"]
+	var updatetodo modelTodo
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(reqBody, &updatetodo)
+	for i,todo := range container{
+		if todo.ID ==id{
+			container = append(container[:i], container[i+1:]...)
+		}
+	}
 }
+
+func main() {
+            log.Println(" Listening and serving HTTP on :8909")
+
+				handleRequests()
+}
+
+func handleRequests() {
+	r := mux.NewRouter()
+	r.HandleFunc("/todo", allTodo).Methods("GET")
+	r.HandleFunc("/posttodo",postTodo).Methods("POST")
+	r.HandleFunc("/todo/{id}",getTodoByID).Methods("GET")
+    r.HandleFunc("/updatetodo/{id}",updateTodoByID).Methods("PUT")
+     r.HandleFunc("/deletetodo/{id}",deleteTodo).Methods("DELETE")
+log.Fatal(http.ListenAndServe(":8909", r))
+}
+
+
