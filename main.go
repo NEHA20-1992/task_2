@@ -68,12 +68,6 @@ func deleteTodo(w http.ResponseWriter,r *http.Request){
 	}
 }
 
-func main() {
-            log.Println(" Listening and serving HTTP on :8909")
-
-				handleRequests()
-}
-
 func handleRequests() {
 	r := mux.NewRouter()
 	r.HandleFunc("/todo", allTodo).Methods("GET")
@@ -84,4 +78,8 @@ func handleRequests() {
 log.Fatal(http.ListenAndServe(":8909", r))
 }
 
+func main() {
+	log.Println(" Listening and serving HTTP on :8909")
+    handleRequests()
+}
 
